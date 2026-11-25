@@ -1,0 +1,2068 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Truco Argentino - Mesa Criolla</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Cinzel para títulos criollos -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos personalizados para la mesa de truco, cartas y animaciones */
+        :root {
+            --wood-dark: #2c1810;
+            --wood-medium: #4a2818;
+            --wood-light: #6e3d24;
+            --felt-green: #14532d;
+            --felt-dark: #0b331b;
+            --gold-accent: #eab308;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--wood-dark);
+            background-image: radial-gradient(circle at center, var(--wood-medium) 0%, var(--wood-dark) 100%);
+            color: #f8fafc;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .font-criollo {
+            font-family: 'Cinzel', serif;
+        }
+
+        /* Paño verde de la mesa */
+        .poker-table {
+            background: radial-gradient(ellipse at center, #1b6b3a 0%, #114726 65%, #092b16 100%);
+            box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.85), 0 12px 30px rgba(0, 0, 0, 0.7);
+            border: 10px solid #3d2012;
+            outline: 3px solid #784226;
+        }
+
+        @media (min-width: 768px) {
+            .poker-table {
+                border-width: 14px;
+            }
+        }
+
+        /* Carta Española */
+        .spanish-card {
+            aspect-ratio: 2 / 3.1;
+            background: linear-gradient(145deg, #fffdf7 0%, #f3ead8 100%);
+            border-radius: 10px;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(180, 150, 100, 0.4);
+            transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease, filter 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .spanish-card.playable:hover {
+            transform: translateY(-14px) scale(1.04);
+            box-shadow: 0 16px 24px rgba(0, 0, 0, 0.6), 0 0 15px rgba(234, 179, 8, 0.5);
+            cursor: pointer;
+            z-index: 20;
+        }
+
+        .spanish-card.playable:active {
+            transform: translateY(-6px) scale(0.98);
+        }
+
+        /* Reverso de la carta */
+        .card-back {
+            background-color: #7f1d1d;
+            background-image: 
+                repeating-linear-gradient(45deg, rgba(255,255,255,0.06) 0px, rgba(255,255,255,0.06) 4px, transparent 4px, transparent 8px),
+                repeating-linear-gradient(-45deg, rgba(234,179,8,0.12) 0px, rgba(234,179,8,0.12) 4px, transparent 4px, transparent 8px);
+            border: 4px solid #f8fafc;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Animación de entrada de carta a la mesa */
+        @keyframes dealCard {
+            0% {
+                opacity: 0;
+                transform: scale(0.6) translateY(-30px) rotate(-10deg);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0) rotate(var(--rot, 0deg));
+            }
+        }
+
+        .animate-deal {
+            animation: dealCard 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Burbujas de diálogo */
+        @keyframes popBubble {
+            0% { opacity: 0; transform: scale(0.7) translateY(8px); }
+            70% { transform: scale(1.05) translateY(-2px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .speech-bubble {
+            animation: popBubble 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* Botones estilo ficha/madera */
+        .btn-truco {
+            background: linear-gradient(180deg, #eab308 0%, #ca8a04 100%);
+            color: #1c1917;
+            border-bottom: 3px solid #854d0e;
+            text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+            transition: all 0.12s ease;
+        }
+        .btn-truco:hover:not(:disabled) {
+            filter: brightness(1.08);
+            transform: translateY(-1px);
+        }
+        .btn-truco:active:not(:disabled) {
+            transform: translateY(2px);
+            border-bottom-width: 1px;
+        }
+
+        .btn-envido {
+            background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
+            color: #ffffff;
+            border-bottom: 3px solid #0c4a6e;
+            transition: all 0.12s ease;
+        }
+        .btn-envido:hover:not(:disabled) {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+        .btn-envido:active:not(:disabled) {
+            transform: translateY(2px);
+            border-bottom-width: 1px;
+        }
+
+        .btn-flor {
+            background: linear-gradient(180deg, #16a34a 0%, #15803d 100%);
+            color: #ffffff;
+            border-bottom: 3px solid #14532d;
+            transition: all 0.12s ease;
+        }
+        .btn-flor:hover:not(:disabled) {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: linear-gradient(180deg, #dc2626 0%, #991b1b 100%);
+            color: #ffffff;
+            border-bottom: 3px solid #7f1d1d;
+            transition: all 0.12s ease;
+        }
+        .btn-danger:hover:not(:disabled) {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+        .btn-neutral {
+            background: linear-gradient(180deg, #475569 0%, #334155 100%);
+            color: #ffffff;
+            border-bottom: 3px solid #1e293b;
+            transition: all 0.12s ease;
+        }
+        .btn-neutral:hover:not(:disabled) {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Scrollbar sutil para historial */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- BARRA SUPERIOR: Título, Configuración rápida y Anotador -->
+    <header class="w-full bg-[#1e100a]/95 border-b border-amber-900/60 px-3 py-2 shadow-lg z-30">
+        <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
+            <!-- Logo / Título -->
+            <div class="flex items-center gap-2">
+                <div class="w-9 h-9 rounded-full bg-amber-500/20 border border-amber-400/50 flex items-center justify-center text-amber-400 shadow-inner">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="font-criollo text-lg sm:text-xl font-black tracking-wider text-amber-400 leading-none">TRUCO ARGENTINO</h1>
+                    <span id="game-mode-label" class="text-[11px] text-amber-200/70 font-medium">A 30 puntos • Sin Flor</span>
+                </div>
+            </div>
+
+            <!-- Controles Superiores -->
+            <div class="flex items-center gap-1.5 sm:gap-2">
+                <!-- Toggle Flor -->
+                <button id="btn-toggle-flor" onclick="toggleFlorSetting()" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-stone-800 hover:bg-stone-700 border border-stone-600 text-stone-200 flex items-center gap-1.5 transition" title="Activar o desactivar la Flor (se aplica en la próxima mano o partida)">
+                    <span id="flor-indicator" class="w-2.5 h-2.5 rounded-full bg-stone-500"></span>
+                    <span>Flor: <strong id="flor-status-text">NO</strong></span>
+                </button>
+
+                <!-- Toggle Puntos 15 / 30 -->
+                <button id="btn-toggle-points" onclick="toggleMaxPoints()" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-stone-800 hover:bg-stone-700 border border-stone-600 text-amber-300 transition" title="Cambiar límite de puntos (15 o 30)">
+                    A <span id="max-points-text">30</span> pts
+                </button>
+
+                <!-- Sonido -->
+                <button id="btn-sound" onclick="toggleSound()" class="p-2 rounded-lg bg-stone-800 hover:bg-stone-700 border border-stone-600 text-amber-200 transition" title="Activar/Silenciar sonidos">
+                    <svg id="icon-sound-on" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+                    </svg>
+                    <svg id="icon-sound-off" class="w-4 h-4 hidden text-red-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
+                    </svg>
+                </button>
+
+                <!-- Ayuda / Reglas -->
+                <button onclick="openModal('modal-rules')" class="p-2 rounded-lg bg-stone-800 hover:bg-stone-700 border border-stone-600 text-sky-300 transition" title="Reglas y Jerarquía de Cartas">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </button>
+
+                <!-- Reiniciar -->
+                <button onclick="confirmRestart()" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-red-950 hover:bg-red-900 border border-red-700 text-red-200 transition" title="Reiniciar Partida">
+                    Reiniciar
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENIDO PRINCIPAL: Mesa + Anotador Lateral -->
+    <main class="flex-1 max-w-6xl w-full mx-auto p-2 sm:p-4 flex flex-col lg:flex-row gap-3 items-stretch justify-center">
+        
+        <!-- MESA DE PAÑO VERDE -->
+        <section class="poker-table flex-1 rounded-3xl p-3 sm:p-5 flex flex-col justify-between relative min-h-[530px] sm:min-h-[600px]">
+            
+            <!-- ZONA SUPERIOR: CPU (Rival) -->
+            <div class="flex flex-col items-center relative z-10">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="flex items-center gap-2 bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full border border-white/15">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" id="cpu-turn-dot" style="display:none;"></span>
+                        <span class="text-xs sm:text-sm font-bold text-amber-100">Don Segundo (CPU)</span>
+                        <span id="cpu-mano-badge" class="hidden text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-500 text-stone-950">Mano</span>
+                    </div>
+                </div>
+
+                <!-- Cartas de la CPU -->
+                <div id="cpu-hand" class="flex justify-center items-center gap-2 sm:gap-3 h-20 sm:h-24">
+                    <!-- Renderizadas dinámicamente -->
+                </div>
+
+                <!-- Burbuja de diálogo CPU -->
+                <div id="cpu-bubble-container" class="h-10 flex items-center justify-center mt-1">
+                    <!-- Burbuja dinámica -->
+                </div>
+            </div>
+
+            <!-- ZONA CENTRAL: Cartas Jugadas en las 3 Manos + Estado de Cantos -->
+            <div class="my-auto py-2 flex flex-col items-center justify-center relative">
+                
+                <!-- Banner de estado actual de la ronda (Truco / Envido activo) -->
+                <div id="round-status-badges" class="flex flex-wrap justify-center gap-2 mb-3 min-h-[26px]">
+                    <!-- Badges dinámicos: ej. "TRUCO QUERIDO (2 pts)", "ENVIDO EN JUEGO" -->
+                </div>
+
+                <!-- Tapete de las 3 Bazas (Primera, Segunda, Tercera) -->
+                <div class="grid grid-cols-3 gap-2 sm:gap-5 w-full max-w-md bg-black/25 rounded-2xl p-2.5 sm:p-4 border border-white/10 shadow-inner">
+                    <!-- Mano 1 -->
+                    <div class="flex flex-col items-center">
+                        <span class="text-[10px] uppercase tracking-wider text-emerald-200/70 font-bold mb-1 flex items-center gap-1">
+                            1ª Mano <span id="round-winner-0" class="text-amber-400"></span>
+                        </span>
+                        <div class="relative w-16 sm:w-20 h-24 sm:h-28 rounded-xl border border-dashed border-white/20 flex items-center justify-center bg-black/15" id="slot-0">
+                            <!-- Cartas jugadas en 1ra -->
+                        </div>
+                    </div>
+
+                    <!-- Mano 2 -->
+                    <div class="flex flex-col items-center">
+                        <span class="text-[10px] uppercase tracking-wider text-emerald-200/70 font-bold mb-1 flex items-center gap-1">
+                            2ª Mano <span id="round-winner-1" class="text-amber-400"></span>
+                        </span>
+                        <div class="relative w-16 sm:w-20 h-24 sm:h-28 rounded-xl border border-dashed border-white/20 flex items-center justify-center bg-black/15" id="slot-1">
+                            <!-- Cartas jugadas en 2da -->
+                        </div>
+                    </div>
+
+                    <!-- Mano 3 -->
+                    <div class="flex flex-col items-center">
+                        <span class="text-[10px] uppercase tracking-wider text-emerald-200/70 font-bold mb-1 flex items-center gap-1">
+                            3ª Mano <span id="round-winner-2" class="text-amber-400"></span>
+                        </span>
+                        <div class="relative w-16 sm:w-20 h-24 sm:h-28 rounded-xl border border-dashed border-white/20 flex items-center justify-center bg-black/15" id="slot-2">
+                            <!-- Cartas jugadas en 3ra -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mensaje guía / Indicador de turno -->
+                <div id="turn-instruction" class="mt-2.5 text-xs sm:text-sm font-semibold text-amber-200 bg-black/45 px-4 py-1 rounded-full border border-amber-500/30 text-center">
+                    Preparando la mesa...
+                </div>
+            </div>
+
+            <!-- ZONA INFERIOR: Jugador Humano + Botonera de Cantos -->
+            <div class="flex flex-col items-center relative z-10">
+                <!-- Burbuja de diálogo Jugador -->
+                <div id="player-bubble-container" class="h-9 flex items-center justify-center mb-1">
+                    <!-- Burbuja dinámica -->
+                </div>
+
+                <!-- Cartas del Jugador -->
+                <div id="player-hand" class="flex justify-center items-center gap-2.5 sm:gap-4 mb-3 min-h-[112px] sm:min-h-[132px]">
+                    <!-- Cartas interactivas -->
+                </div>
+
+                <!-- Info del Jugador (Mano y Puntos de Envido/Flor propios) -->
+                <div class="flex items-center gap-3 mb-2.5 text-xs">
+                    <div class="flex items-center gap-1.5 bg-black/50 px-3 py-1 rounded-full border border-white/15">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" id="player-turn-dot" style="display:none;"></span>
+                        <span class="font-bold text-white">Vos</span>
+                        <span id="player-mano-badge" class="hidden text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-500 text-stone-950">Mano</span>
+                    </div>
+                    <div id="player-hand-helper" class="bg-emerald-950/90 text-emerald-200 px-3 py-1 rounded-full border border-emerald-500/30 font-semibold">
+                        Envido: <strong id="player-envido-val" class="text-amber-300">--</strong>
+                    </div>
+                </div>
+
+                <!-- PANEL DE ACCIONES Y CANTOS -->
+                <div id="action-buttons" class="w-full max-w-2xl flex flex-wrap justify-center gap-1.5 sm:gap-2">
+                    <!-- Los botones se generan dinámicamente según el estado exacto del juego -->
+                </div>
+            </div>
+
+            <!-- Overlay de Fin de Mano / Fin de Partida -->
+            <div id="round-summary-overlay" class="hidden absolute inset-0 bg-black/75 backdrop-blur-sm rounded-2xl z-30 flex flex-col items-center justify-center p-5 text-center animate-fade-in">
+                <div class="bg-[#2c1810] border-2 border-amber-500/80 rounded-2xl p-6 max-w-md w-full shadow-2xl">
+                    <h2 id="summary-title" class="font-criollo text-2xl sm:text-3xl font-black text-amber-400 mb-2">¡Mano Terminada!</h2>
+                    <p id="summary-details" class="text-sm sm:text-base text-stone-200 mb-5 leading-relaxed whitespace-pre-line"></p>
+                    <button id="btn-next-round" onclick="startNewHand()" class="btn-truco w-full py-3 px-6 rounded-xl font-extrabold text-base uppercase tracking-wider shadow-lg">
+                        Siguiente Mano
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- PANEL DERECHO / INFERIOR: Anotador de Fósforos e Historial -->
+        <aside class="w-full lg:w-72 flex flex-col gap-3">
+            
+            <!-- ANOTADOR CRIOLLO (MALAS Y BUENAS) -->
+            <div class="bg-[#23120b] border-2 border-amber-900/70 rounded-2xl p-3.5 shadow-xl">
+                <div class="flex items-center justify-between border-b border-amber-900/50 pb-2 mb-3">
+                    <h2 class="font-criollo text-sm font-bold text-amber-400 tracking-wider uppercase">Anotador</h2>
+                    <span id="scoreboard-target" class="text-xs font-bold text-stone-400">Meta: 30 pts</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 text-center">
+                    <!-- Columna NOSOTROS (VOS) -->
+                    <div class="bg-black/30 rounded-xl p-2 border border-white/5">
+                        <div class="text-xs font-extrabold uppercase tracking-wider text-amber-300 mb-1">VOS</div>
+                        <div class="text-2xl font-black text-white leading-none mb-1" id="score-player-num">0</div>
+                        <div class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full inline-block mb-2" id="score-player-stage">Malas</div>
+                        <!-- Cuadrados de fósforos -->
+                        <div id="matches-player" class="flex flex-col items-center gap-1.5 min-h-[115px] justify-start pt-1"></div>
+                    </div>
+
+                    <!-- Columna ELLOS (CPU) -->
+                    <div class="bg-black/30 rounded-xl p-2 border border-white/5">
+                        <div class="text-xs font-extrabold uppercase tracking-wider text-sky-300 mb-1">CPU</div>
+                        <div class="text-2xl font-black text-white leading-none mb-1" id="score-cpu-num">0</div>
+                        <div class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full inline-block mb-2" id="score-cpu-stage">Malas</div>
+                        <!-- Cuadrados de fósforos -->
+                        <div id="matches-cpu" class="flex flex-col items-center gap-1.5 min-h-[115px] justify-start pt-1"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HISTORIAL DE LA MANO -->
+            <div class="bg-[#23120b] border-2 border-amber-900/70 rounded-2xl p-3.5 shadow-xl flex-1 flex flex-col min-h-[160px] max-h-[260px] lg:max-h-none">
+                <div class="flex items-center justify-between border-b border-amber-900/50 pb-1.5 mb-2">
+                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-amber-200/80">Relato de la Mano</h3>
+                    <span class="text-[10px] text-stone-400">En vivo</span>
+                </div>
+                <div id="game-log" class="flex-1 overflow-y-auto space-y-1.5 text-xs pr-1">
+                    <!-- Mensajes del historial -->
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- MODAL DE REGLAS Y JERARQUÍA -->
+    <div id="modal-rules" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-[#26140c] border-2 border-amber-600/80 rounded-2xl max-w-2xl w-full max-h-[88vh] flex flex-col shadow-2xl">
+            <div class="flex items-center justify-between p-4 border-b border-amber-900/60">
+                <h2 class="font-criollo text-xl font-black text-amber-400">Reglas y Jerarquía del Truco</h2>
+                <button onclick="closeModal('modal-rules')" class="text-stone-400 hover:text-white p-1">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="p-4 sm:p-6 overflow-y-auto space-y-4 text-sm text-stone-200">
+                <div>
+                    <h3 class="font-bold text-amber-300 text-base mb-1">1. Jerarquía de Cartas (de mayor a menor)</h3>
+                    <ol class="list-decimal list-inside space-y-1 bg-black/30 p-3 rounded-xl border border-white/10 text-xs sm:text-sm">
+                        <li><strong class="text-amber-400">1 de Espadas</strong> (Ancho de Espadas)</li>
+                        <li><strong class="text-amber-400">1 de Bastos</strong> (Ancho de Bastos)</li>
+                        <li><strong class="text-amber-400">7 de Espadas</strong></li>
+                        <li><strong class="text-amber-400">7 de Oros</strong></li>
+                        <li><strong>Los Tres (3)</strong> (de cualquier palo)</li>
+                        <li><strong>Los Dos (2)</strong> (de cualquier palo)</li>
+                        <li><strong>1 de Copas y 1 de Oros</strong> (Anchos falsos)</li>
+                        <li><strong>Los Doce (12)</strong> (Reyes)</li>
+                        <li><strong>Los Once (11)</strong> (Caballos)</li>
+                        <li><strong>Los Diez (10)</strong> (Sotas)</li>
+                        <li><strong>7 de Copas y 7 de Bastos</strong> (Sietes falsos)</li>
+                        <li><strong>Los Seis (6)</strong></li>
+                        <li><strong>Los Cinco (5)</strong></li>
+                        <li><strong>Los Cuatro (4)</strong> (la carta más baja)</li>
+                    </ol>
+                </div>
+
+                <div>
+                    <h3 class="font-bold text-sky-300 text-base mb-1">2. El Envido (Se canta solo en la 1ª mano)</h3>
+                    <p class="text-xs sm:text-sm text-stone-300 leading-relaxed">
+                        Si tenés <strong>2 cartas del mismo palo</strong>, sumás sus valores + 20 (las figuras 10, 11 y 12 valen 0 para el envido). Si las 3 son de distinto palo, vale la carta más alta. En caso de empate, gana quien es <strong>Mano</strong> (quien empezó jugando la ronda).
+                    </p>
+                    <ul class="list-disc list-inside text-xs text-stone-300 mt-1 space-y-0.5">
+                        <li><strong>Envido:</strong> 2 pts (No quiero: 1 pt)</li>
+                        <li><strong>Real Envido:</strong> 3 pts (No quiero: 1 pt)</li>
+                        <li><strong>Falta Envido:</strong> Gana los puntos que le faltan al puntero para ganar el partido (en Malas suele jugarse a ganar las Malas o el partido completo; aquí define el partido o los puntos restantes).</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="font-bold text-emerald-300 text-base mb-1">3. La Flor (Opcional)</h3>
+                    <p class="text-xs sm:text-sm text-stone-300">
+                        Si activás la Flor arriba, cuando un jugador tiene <strong>3 cartas del mismo palo</strong> debe cantarla en la 1ª mano (anula el Envido). Vale 3 puntos (4 con Contraflor, o el partido con Contraflor al Resto).
+                    </p>
+                </div>
+
+                <div>
+                    <h3 class="font-bold text-amber-300 text-base mb-1">4. El Truco</h3>
+                    <p class="text-xs sm:text-sm text-stone-300">
+                        Se juega al mejor de 3 manos (bazas). Empatar (<em>empardar</em>) la 1ª hace que defina la 2ª. Empatar 1ª y 2ª hace que defina la 3ª. Si se empata la 3ª, gana quien ganó la 1ª (o el Mano si todas fueron empardadas).
+                        <br>Valores: <strong>Común (1 pt) → Truco (2 pts) → Retruco (3 pts) → Vale Cuatro (4 pts)</strong>.
+                    </p>
+                </div>
+            </div>
+            <div class="p-4 border-t border-amber-900/60 flex justify-end">
+                <button onclick="closeModal('modal-rules')" class="btn-truco px-6 py-2 rounded-xl font-bold text-sm">¡Entendido!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONFIRMACIÓN REINICIO -->
+    <div id="modal-confirm" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-[#26140c] border-2 border-amber-600 rounded-2xl max-w-sm w-full p-5 text-center shadow-2xl">
+            <h3 class="font-criollo text-lg font-bold text-amber-400 mb-2">¿Reiniciar Partida?</h3>
+            <p class="text-sm text-stone-300 mb-5">Se perderá el puntaje actual y comenzará un partido nuevo desde cero.</p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="closeModal('modal-confirm')" class="btn-neutral px-4 py-2 rounded-xl text-sm font-bold flex-1">Cancelar</button>
+                <button onclick="resetFullGame()" class="btn-danger px-4 py-2 rounded-xl text-sm font-bold flex-1">Sí, reiniciar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * ============================================================================
+         * MOTOR DE AUDIO SINTETIZADO (WEB AUDIO API)
+         * Genera sonidos de cartas, fichas/fósforos, victoria y alertas sin archivos externos.
+         * ============================================================================
+         */
+        class SoundFX {
+            constructor() {
+                this.enabled = true;
+                this.ctx = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playCardFlip() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(320, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(90, this.ctx.currentTime + 0.08);
+                    gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.08);
+                } catch (e) {}
+            }
+
+            playCanto() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(587.33, this.ctx.currentTime + 0.12);
+                    gain.gain.setValueAtTime(0.14, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.14);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.14);
+                } catch (e) {}
+            }
+
+            playWinHand() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+                try {
+                    const notes = [523.25, 659.25, 783.99];
+                    notes.forEach((freq, i) => {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, this.ctx.currentTime + i * 0.08);
+                        gain.gain.setValueAtTime(0.15, this.ctx.currentTime + i * 0.08);
+                        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + i * 0.08 + 0.25);
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start(this.ctx.currentTime + i * 0.08);
+                        osc.stop(this.ctx.currentTime + i * 0.08 + 0.25);
+                    });
+                } catch (e) {}
+            }
+
+            playLoseHand() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+                try {
+                    const notes = [349.23, 293.66];
+                    notes.forEach((freq, i) => {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(freq, this.ctx.currentTime + i * 0.12);
+                        gain.gain.setValueAtTime(0.08, this.ctx.currentTime + i * 0.12);
+                        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + i * 0.12 + 0.25);
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start(this.ctx.currentTime + i * 0.12);
+                        osc.stop(this.ctx.currentTime + i * 0.12 + 0.25);
+                    });
+                } catch (e) {}
+            }
+        }
+
+        const sfx = new SoundFX();
+
+        /**
+         * ============================================================================
+         * DEFINICIÓN DE BARAJA ESPAÑOLA Y REGLAS DEL TRUCO ARGENTINO
+         * ============================================================================
+         */
+        const SUITS = ['espadas', 'bastos', 'oros', 'copas'];
+        const VALUES = [1, 2, 3, 4, 5, 6, 7, 10, 11, 12];
+
+        // Jerarquía exacta del Truco Argentino (mayor número = carta más fuerte)
+        function getTrucoPower(suit, value) {
+            if (value === 1 && suit === 'espadas') return 14; // Ancho de espadas
+            if (value === 1 && suit === 'bastos') return 13;  // Ancho de bastos
+            if (value === 7 && suit === 'espadas') return 12; // 7 de espadas
+            if (value === 7 && suit === 'oros') return 11;    // 7 de oros
+            if (value === 3) return 10;                       // Los Tres
+            if (value === 2) return 9;                        // Los Dos
+            if (value === 1) return 8;                        // 1 de copas y 1 de oros
+            if (value === 12) return 7;                       // Reyes
+            if (value === 11) return 6;                       // Caballos
+            if (value === 10) return 5;                       // Sotas
+            if (value === 7) return 4;                        // 7 de copas y 7 de bastos
+            if (value === 6) return 3;                        // Seis
+            if (value === 5) return 2;                        // Cinco
+            if (value === 4) return 1;                        // Cuatro
+            return 0;
+        }
+
+        // Valor de una carta para el cálculo de Envido/Flor
+        function getEnvidoCardValue(value) {
+            return value >= 10 ? 0 : value;
+        }
+
+        // Calcula los puntos de Envido de una mano de 3 cartas
+        function calculateEnvido(cards) {
+            const bySuit = { espadas: [], bastos: [], oros: [], copas: [] };
+            cards.forEach(c => bySuit[c.suit].push(getEnvidoCardValue(c.value)));
+
+            let maxEnvido = 0;
+            for (const suit of SUITS) {
+                const vals = bySuit[suit].sort((a, b) => b - a);
+                if (vals.length >= 2) {
+                    const score = 20 + vals[0] + vals[1];
+                    if (score > maxEnvido) maxEnvido = score;
+                } else if (vals.length === 1) {
+                    if (vals[0] > maxEnvido) maxEnvido = vals[0];
+                }
+            }
+            return maxEnvido;
+        }
+
+        // Verifica si una mano tiene Flor (3 cartas del mismo palo) y calcula sus puntos
+        function calculateFlor(cards) {
+            if (cards.length < 3) return null;
+            if (cards[0].suit === cards[1].suit && cards[1].suit === cards[2].suit) {
+                const sum = getEnvidoCardValue(cards[0].value) +
+                            getEnvidoCardValue(cards[1].value) +
+                            getEnvidoCardValue(cards[2].value);
+                return 20 + sum;
+            }
+            return null;
+        }
+
+        /**
+         * ============================================================================
+         * ESTADO GLOBAL DEL JUEGO
+         * ============================================================================
+         */
+        const state = {
+            maxPoints: 30,
+            withFlor: false,
+            scores: { player: 0, cpu: 0 },
+            mano: 'player', // 'player' o 'cpu' (quien es mano en la ronda actual)
+            turn: 'player', // de quién es el turno actual
+            handOver: false,
+            matchOver: false,
+
+            // Cartas en mano y jugadas
+            playerHand: [],
+            cpuHand: [],
+            playedCards: [
+                { player: null, cpu: null }, // 1ra mano
+                { player: null, cpu: null }, // 2da mano
+                { player: null, cpu: null }  // 3ra mano
+            ],
+            roundWinners: [null, null, null], // 'player', 'cpu', 'tie'
+            currentTrick: 0, // 0, 1, 2
+
+            // Estado del Truco
+            trucoLevel: 0, // 0: nada, 1: Truco (2pts), 2: Retruco (3pts), 3: Vale Cuatro (4pts)
+            trucoOwner: null, // quién tiene el "quiero" (puede subir la apuesta)
+            pendingTruco: null, // si hay un canto de truco esperando respuesta: { level, by }
+
+            // Estado del Envido
+            envidoPlayed: false, // ya se resolvió o pasó el momento del envido
+            envidoSequence: [], // ej: ['envido'], ['envido', 'envido'], ['envido', 'real_envido'], ['falta_envido']
+            pendingEnvido: null, // { sequence, by } esperando respuesta
+
+            // Estado de la Flor
+            florPlayed: false,
+            florSequence: [], // ['flor'], ['flor', 'contraflor'], ['flor', 'contraflor_resto']
+            pendingFlor: null, // { sequence, by }
+            playerHasFlor: false,
+            cpuHasFlor: false,
+            florAnnouncedBy: { player: false, cpu: false }
+        };
+
+        /**
+         * ============================================================================
+         * RENDERIZADO VISUAL DE CARTAS ESPAÑOLAS (SVG ARTESANAL)
+         * ============================================================================
+         */
+        function getSuitSVG(suit, sizeClass = "w-6 h-6") {
+            switch (suit) {
+                case 'oros':
+                    return `<svg class="${sizeClass}" viewBox="0 0 36 36">
+                        <circle cx="18" cy="18" r="14" fill="#f59e0b" stroke="#92400e" stroke-width="2"/>
+                        <circle cx="18" cy="18" r="10" fill="#fbbf24" stroke="#b45309" stroke-width="1.2" stroke-dasharray="2 1.5"/>
+                        <path d="M18 11 L20 16 L25 18 L20 20 L18 25 L16 20 L11 18 L16 16 Z" fill="#fef3c7"/>
+                    </svg>`;
+                case 'copas':
+                    return `<svg class="${sizeClass}" viewBox="0 0 36 36">
+                        <path d="M10 7 H26 L24 18 C24 22 21 24 18 24 C15 24 12 22 12 18 Z" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.8"/>
+                        <path d="M12 11 H24" stroke="#fca5a5" stroke-width="1.5"/>
+                        <rect x="16.5" y="24" width="3" height="5" fill="#b91c1c"/>
+                        <path d="M11 30 H25 L23 28 H13 Z" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.5"/>
+                    </svg>`;
+                case 'espadas':
+                    return `<svg class="${sizeClass}" viewBox="0 0 36 36">
+                        <path d="M18 4 L21 9 L20 24 H16 L15 9 Z" fill="#0284c7" stroke="#0c4a6e" stroke-width="1.5"/>
+                        <line x1="18" y1="7" x2="18" y2="23" stroke="#bae6fd" stroke-width="1.2"/>
+                        <path d="M11 24 H25 L23 26.5 H13 Z" fill="#eab308" stroke="#854d0e" stroke-width="1.4"/>
+                        <rect x="16.8" y="26.5" width="2.4" height="4.5" fill="#78350f"/>
+                        <circle cx="18" cy="32" r="2.2" fill="#eab308" stroke="#854d0e" stroke-width="1.2"/>
+                    </svg>`;
+                case 'bastos':
+                    return `<svg class="${sizeClass}" viewBox="0 0 36 36">
+                        <path d="M15 6 C15 4 21 4 21 6 L22.5 29 C22.5 32 13.5 32 13.5 29 Z" fill="#15803d" stroke="#14532d" stroke-width="1.8"/>
+                        <path d="M15 12 L12 10 M21 16 L24 14 M14.5 22 L11.5 20" stroke="#14532d" stroke-width="2" stroke-linecap="round"/>
+                        <ellipse cx="18" cy="6.5" rx="2.5" ry="1.2" fill="#86efac"/>
+                    </svg>`;
+            }
+        }
+
+        function getCardColorClass(suit) {
+            if (suit === 'oros') return 'text-amber-700';
+            if (suit === 'copas') return 'text-red-700';
+            if (suit === 'espadas') return 'text-sky-800';
+            return 'text-emerald-800';
+        }
+
+        function renderCardHTML(card, options = {}) {
+            const { playable = false, small = false, index = 0, rotation = 0 } = options;
+            const colorClass = getCardColorClass(card.suit);
+            const sizeClasses = small
+                ? 'w-14 sm:w-16 text-xs'
+                : 'w-20 sm:w-24 text-sm sm:text-base';
+            const iconSize = small ? 'w-6 h-6' : 'w-9 h-9 sm:w-11 sm:h-11';
+            const cornerIconSize = small ? 'w-3 h-3' : 'w-4 h-4';
+
+            // Etiqueta especial para cartas bravas
+            let badge = '';
+            if (card.power === 14) badge = '<span class="absolute bottom-1 right-1 text-[8px] font-black bg-amber-400 text-stone-900 px-1 rounded">1º</span>';
+            else if (card.power === 13) badge = '<span class="absolute bottom-1 right-1 text-[8px] font-black bg-amber-400 text-stone-900 px-1 rounded">2º</span>';
+            else if (card.power === 12) badge = '<span class="absolute bottom-1 right-1 text-[8px] font-black bg-sky-300 text-stone-900 px-1 rounded">3º</span>';
+            else if (card.power === 11) badge = '<span class="absolute bottom-1 right-1 text-[8px] font-black bg-amber-300 text-stone-900 px-1 rounded">4º</span>';
+
+            const clickAttr = playable ? `onclick="onPlayerPlayCard(${index})"` : '';
+            const playableClass = playable ? 'playable ring-2 ring-amber-400/70' : '';
+
+            return `
+                <div ${clickAttr} style="--rot: ${rotation}deg" class="spanish-card ${sizeClasses} ${playableClass} flex flex-col justify-between p-1.5 sm:p-2 select-none animate-deal">
+                    <!-- Esquina superior izquierda -->
+                    <div class="flex flex-col items-center leading-none w-fit ${colorClass}">
+                        <span class="font-extrabold tracking-tighter">${card.value}</span>
+                        ${getSuitSVG(card.suit, cornerIconSize)}
+                    </div>
+
+                    <!-- Centro ilustrado -->
+                    <div class="my-auto flex flex-col items-center justify-center">
+                        ${getSuitSVG(card.suit, iconSize)}
+                        ${!small ? `<span class="text-[9px] uppercase font-bold tracking-wider opacity-60 mt-0.5 ${colorClass}">${card.suit}</span>` : ''}
+                    </div>
+
+                    <!-- Esquina inferior derecha invertida -->
+                    <div class="flex flex-col items-center leading-none w-fit self-end rotate-180 ${colorClass}">
+                        <span class="font-extrabold tracking-tighter">${card.value}</span>
+                        ${getSuitSVG(card.suit, cornerIconSize)}
+                    </div>
+                    ${badge}
+                </div>
+            `;
+        }
+
+        function renderCardBackHTML(small = false) {
+            const sizeClasses = small ? 'w-12 sm:w-14' : 'w-14 sm:w-16';
+            return `
+                <div class="spanish-card card-back ${sizeClasses} flex items-center justify-center">
+                    <div class="w-6 h-6 rounded-full border border-amber-300/40 flex items-center justify-center">
+                        <div class="w-2.5 h-2.5 rotate-45 bg-amber-400/50"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        /**
+         * ============================================================================
+         * LÓGICA DEL ANOTADOR DE FÓSFOROS (MALAS Y BUENAS)
+         * ============================================================================
+         */
+        function renderMatches(containerId, points, maxPoints) {
+            const container = document.getElementById(containerId);
+            const half = maxPoints / 2; // 15 si es a 30, o 7/8 si es a 15 (en 15 son 3 cuadrados de 5)
+            const displayPoints = points > half ? points - half : points;
+            const totalBoxes = Math.ceil(half / 5);
+
+            let html = '';
+            for (let b = 0; b < totalBoxes; b++) {
+                const count = Math.max(0, Math.min(5, displayPoints - b * 5));
+                html += createMatchSquareSVG(count);
+            }
+            container.innerHTML = html;
+        }
+
+        function createMatchSquareSVG(count) {
+            // Dibuja hasta 5 fósforos formando un cuadrado y su diagonal
+            const matchColor = "#fef08a";
+            const headColor = "#ef4444";
+            let lines = '';
+
+            // 1: Izquierda (arriba a abajo)
+            if (count >= 1) {
+                lines += `<line x1="8" y1="6" x2="8" y2="28" stroke="${matchColor}" stroke-width="2.5" stroke-linecap="round"/>
+                          <circle cx="8" cy="6" r="2.3" fill="${headColor}"/>`;
+            }
+            // 2: Arriba (izquierda a derecha)
+            if (count >= 2) {
+                lines += `<line x1="10" y1="6" x2="30" y2="6" stroke="${matchColor}" stroke-width="2.5" stroke-linecap="round"/>
+                          <circle cx="30" cy="6" r="2.3" fill="${headColor}"/>`;
+            }
+            // 3: Derecha (arriba a abajo)
+            if (count >= 3) {
+                lines += `<line x1="30" y1="8" x2="30" y2="28" stroke="${matchColor}" stroke-width="2.5" stroke-linecap="round"/>
+                          <circle cx="30" cy="28" r="2.3" fill="${headColor}"/>`;
+            }
+            // 4: Abajo (derecha a izquierda)
+            if (count >= 4) {
+                lines += `<line x1="28" y1="28" x2="8" y2="28" stroke="${matchColor}" stroke-width="2.5" stroke-linecap="round"/>
+                          <circle cx="8" cy="28" r="2.3" fill="${headColor}"/>`;
+            }
+            // 5: Diagonal
+            if (count >= 5) {
+                lines += `<line x1="9" y1="27" x2="29" y2="7" stroke="${matchColor}" stroke-width="2.5" stroke-linecap="round"/>
+                          <circle cx="29" cy="7" r="2.3" fill="${headColor}"/>`;
+            }
+
+            return `<svg class="w-10 h-9 bg-black/25 rounded border border-white/5" viewBox="0 0 38 34">${lines}</svg>`;
+        }
+
+        function updateScoreboardUI() {
+            const half = Math.floor(state.maxPoints / 2);
+            document.getElementById('scoreboard-target').textContent = `Meta: ${state.maxPoints} pts`;
+            document.getElementById('score-player-num').textContent = state.scores.player;
+            document.getElementById('score-cpu-num').textContent = state.scores.cpu;
+
+            const pStage = document.getElementById('score-player-stage');
+            const cStage = document.getElementById('score-cpu-stage');
+
+            if (state.maxPoints === 30) {
+                pStage.textContent = state.scores.player >= 15 ? 'Buenas' : 'Malas';
+                pStage.className = `text-[10px] font-bold uppercase px-2 py-0.5 rounded-full inline-block mb-2 ${state.scores.player >= 15 ? 'bg-emerald-600 text-white' : 'bg-amber-900/80 text-amber-200'}`;
+
+                cStage.textContent = state.scores.cpu >= 15 ? 'Buenas' : 'Malas';
+                cStage.className = `text-[10px] font-bold uppercase px-2 py-0.5 rounded-full inline-block mb-2 ${state.scores.cpu >= 15 ? 'bg-emerald-600 text-white' : 'bg-amber-900/80 text-amber-200'}`;
+            } else {
+                pStage.textContent = 'A 15 pts';
+                pStage.className = 'text-[10px] font-bold uppercase px-2 py-0.5 rounded-full inline-block mb-2 bg-amber-900/80 text-amber-200';
+                cStage.textContent = 'A 15 pts';
+                cStage.className = 'text-[10px] font-bold uppercase px-2 py-0.5 rounded-full inline-block mb-2 bg-amber-900/80 text-amber-200';
+            }
+
+            renderMatches('matches-player', state.scores.player, state.maxPoints);
+            renderMatches('matches-cpu', state.scores.cpu, state.maxPoints);
+        }
+
+        /**
+         * ============================================================================
+         * HISTORIAL Y BURBUJAS DE DIÁLOGO
+         * ============================================================================
+         */
+        function addLog(text, type = 'normal') {
+            const log = document.getElementById('game-log');
+            const entry = document.createElement('div');
+            let colorClass = 'text-stone-300';
+            if (type === 'player') colorClass = 'text-amber-300 font-semibold';
+            if (type === 'cpu') colorClass = 'text-sky-300 font-semibold';
+            if (type === 'system') colorClass = 'text-emerald-300 font-bold border-t border-white/10 pt-1 mt-1';
+            if (type === 'score') colorClass = 'text-yellow-400 font-bold bg-yellow-950/40 px-2 py-1 rounded';
+
+            entry.className = `leading-snug ${colorClass}`;
+            entry.textContent = text;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        let bubbleTimers = { player: null, cpu: null };
+
+        function showBubble(who, text, style = 'normal') {
+            const container = document.getElementById(`${who}-bubble-container`);
+            if (bubbleTimers[who]) clearTimeout(bubbleTimers[who]);
+
+            let bg = 'bg-white text-stone-900 border-stone-300';
+            if (style === 'truco') bg = 'bg-amber-400 text-stone-950 border-amber-200 font-black';
+            if (style === 'envido') bg = 'bg-sky-500 text-white border-sky-200 font-black';
+            if (style === 'flor') bg = 'bg-emerald-500 text-white border-emerald-200 font-black';
+            if (style === 'danger') bg = 'bg-red-600 text-white border-red-300 font-bold';
+
+            container.innerHTML = `
+                <div class="speech-bubble px-3.5 py-1 rounded-full border-2 shadow-lg text-xs sm:text-sm tracking-wide ${bg}">
+                    "${text}"
+                </div>
+            `;
+
+            sfx.playCanto();
+
+            bubbleTimers[who] = setTimeout(() => {
+                container.innerHTML = '';
+            }, 3400);
+        }
+
+        /**
+         * ============================================================================
+         * INICIO Y REPARTO DE CADA MANO
+         * ============================================================================
+         */
+        function buildDeck() {
+            const deck = [];
+            for (const suit of SUITS) {
+                for (const value of VALUES) {
+                    deck.push({
+                        suit,
+                        value,
+                        power: getTrucoPower(suit, value),
+                        id: `${value}_${suit}`
+                    });
+                }
+            }
+            // Barajar Fisher-Yates
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+            return deck;
+        }
+
+        function startNewHand() {
+            if (state.matchOver) {
+                resetFullGame();
+                return;
+            }
+
+            document.getElementById('round-summary-overlay').classList.add('hidden');
+            document.getElementById('player-bubble-container').innerHTML = '';
+            document.getElementById('cpu-bubble-container').innerHTML = '';
+
+            // Alternar quién es mano (excepto en la primerísima mano del partido)
+            if (state.playerHand.length > 0) {
+                state.mano = state.mano === 'player' ? 'cpu' : 'player';
+            }
+
+            const deck = buildDeck();
+            state.playerHand = [deck[0], deck[2], deck[4]];
+            state.cpuHand = [deck[1], deck[3], deck[5]];
+
+            // Resetear variables de la mano
+            state.playedCards = [
+                { player: null, cpu: null },
+                { player: null, cpu: null },
+                { player: null, cpu: null }
+            ];
+            state.roundWinners = [null, null, null];
+            state.currentTrick = 0;
+            state.handOver = false;
+
+            state.trucoLevel = 0;
+            state.trucoOwner = null;
+            state.pendingTruco = null;
+
+            state.envidoPlayed = false;
+            state.envidoSequence = [];
+            state.pendingEnvido = null;
+
+            state.florPlayed = false;
+            state.florSequence = [];
+            state.pendingFlor = null;
+            state.florAnnouncedBy = { player: false, cpu: false };
+
+            // Evaluar Flor
+            const pFlor = state.withFlor ? calculateFlor(state.playerHand) : null;
+            const cFlor = state.withFlor ? calculateFlor(state.cpuHand) : null;
+            state.playerHasFlor = pFlor !== null;
+            state.cpuHasFlor = cFlor !== null;
+
+            // El Mano empieza jugando
+            state.turn = state.mano;
+
+            addLog(`--- Nueva mano (Es mano: ${state.mano === 'player' ? 'Vos' : 'Don Segundo'}) ---`, 'system');
+            sfx.playCardFlip();
+
+            updateUI();
+
+            // Si empieza la CPU, darle un pequeño respiro para pensar y actuar
+            if (state.turn === 'cpu') {
+                setTimeout(() => cpuTakeTurn(), 900);
+            }
+        }
+
+        /**
+         * ============================================================================
+         * CÁLCULO DE PUNTOS DE ENVIDO / FLOR / TRUCO
+         * ============================================================================
+         */
+        function getEnvidoPoints(sequence, accepted) {
+            // Calcula los puntos en juego según la cadena de cantos de envido
+            const totalCalls = sequence.length;
+            if (!accepted) {
+                // Si no se quiso el primer canto, vale 1 punto
+                if (totalCalls === 1) return 1;
+                // Si se subió y no se quiso el último, se ganan los puntos acumulados hasta el canto anterior
+                const prevSeq = sequence.slice(0, -1);
+                return getEnvidoPoints(prevSeq, true);
+            }
+
+            // Si fue querido:
+            if (sequence.includes('falta_envido')) {
+                const leaderScore = Math.max(state.scores.player, state.scores.cpu);
+                // En Argentina: si están en malas (menos de 15 en juego a 30), la falta suele valer para salir de malas o el resto;
+                // usamos la regla estándar de puntos que le faltan al puntero para llegar a la meta.
+                return Math.max(1, state.maxPoints - leaderScore);
+            }
+
+            let pts = 0;
+            for (const call of sequence) {
+                if (call === 'envido') pts += 2;
+                if (call === 'real_envido') pts += 3;
+            }
+            return pts;
+        }
+
+        function getEnvidoSequenceName(sequence) {
+            const map = {
+                'envido': 'Envido',
+                'real_envido': 'Real Envido',
+                'falta_envido': 'Falta Envido'
+            };
+            return sequence.map(s => map[s]).join(' - ');
+        }
+
+        function getFlorPoints(sequence, accepted) {
+            const last = sequence[sequence.length - 1];
+            if (!accepted) {
+                if (last === 'flor') return 3;
+                if (last === 'contraflor') return 4;
+                if (last === 'contraflor_resto') return 6;
+            } else {
+                if (last === 'flor') return 3;
+                if (last === 'contraflor') return 6;
+                if (last === 'contraflor_resto') {
+                    const leaderScore = Math.max(state.scores.player, state.scores.cpu);
+                    return Math.max(6, state.maxPoints - leaderScore);
+                }
+            }
+            return 3;
+        }
+
+        function getTrucoPoints(level, accepted) {
+            if (!accepted) {
+                // Si no se quiere Truco -> 1 pt; no se quiere Retruco -> 2 pts; no se quiere Vale 4 -> 3 pts
+                return Math.max(1, level);
+            }
+            // Querido: Truco = 2, Retruco = 3, Vale 4 = 4
+            return level + 1;
+        }
+
+        function getTrucoName(level) {
+            if (level === 1) return 'Truco';
+            if (level === 2) return 'Retruco';
+            if (level === 3) return 'Vale Cuatro';
+            return '';
+        }
+
+        /**
+         * ============================================================================
+         * ACCIONES DEL JUGADOR HUMANO
+         * ============================================================================
+         */
+        function onPlayerPlayCard(handIndex) {
+            if (state.handOver || state.turn !== 'player') return;
+            if (state.pendingTruco || state.pendingEnvido || state.pendingFlor) return;
+
+            // Si el jugador tiene Flor y es la 1ra mano y aún no la cantó, recordarle o obligar si corresponde
+            // En el truco con flor, tener flor obliga a cantarla antes de jugar o responder. Aquí permitimos cantarla con botón destacado,
+            // y si juega carta sin cantarla en 1ra mano, la canta automáticamente para cumplir el reglamento.
+            if (state.withFlor && state.playerHasFlor && !state.florPlayed && state.currentTrick === 0) {
+                playerCantarFlor();
+                return;
+            }
+
+            const card = state.playerHand.splice(handIndex, 1)[0];
+            state.playedCards[state.currentTrick].player = card;
+            sfx.playCardFlip();
+            addLog(`Jugaste el ${card.value} de ${card.suit}.`, 'player');
+
+            afterCardPlayed();
+        }
+
+        function playerCantarEnvido(type) {
+            if (state.handOver) return;
+
+            // Caso 1: El jugador está respondiendo a un Envido de la CPU y decide subirlo
+            if (state.pendingEnvido && state.pendingEnvido.by === 'cpu') {
+                const newSeq = [...state.pendingEnvido.sequence, type];
+                state.pendingEnvido = { sequence: newSeq, by: 'player' };
+                const label = type === 'envido' ? '¡Envido!' : type === 'real_envido' ? '¡Real Envido!' : '¡Falta Envido!';
+                showBubble('player', label, 'envido');
+                addLog(`Subiste la apuesta: ${label}`, 'player');
+                updateUI();
+                setTimeout(() => cpuRespondToEnvido(), 950);
+                return;
+            }
+
+            // Caso 2: El jugador inicia el Envido en su turno (1ra mano)
+            // También puede cantarse "Envido está primero" si la CPU acaba de cantar Truco en 1ra mano
+            if (state.pendingTruco && state.pendingTruco.by === 'cpu' && state.currentTrick === 0 && !state.envidoPlayed) {
+                state.pendingTruco = null; // El Envido está primero; el truco queda en suspenso/anulado hasta resolver envido
+                addLog('¡El Envido está primero!', 'system');
+            }
+
+            const newSeq = [type];
+            state.pendingEnvido = { sequence: newSeq, by: 'player' };
+            const label = type === 'envido' ? '¡Envido!' : type === 'real_envido' ? '¡Real Envido!' : '¡Falta Envido!';
+            showBubble('player', label, 'envido');
+            addLog(`Cantaste: ${label}`, 'player');
+            updateUI();
+            setTimeout(() => cpuRespondToEnvido(), 950);
+        }
+
+        function playerRespondEnvido(accept) {
+            if (!state.pendingEnvido || state.pendingEnvido.by !== 'cpu') return;
+            const seq = state.pendingEnvido.sequence;
+            state.pendingEnvido = null;
+            state.envidoPlayed = true;
+
+            if (!accept) {
+                const pts = getEnvidoPoints(seq, false);
+                showBubble('player', 'No quiero', 'danger');
+                addLog(`No quisiste el ${getEnvidoSequenceName(seq)}. CPU suma ${pts} pt(s).`, 'player');
+                awardPoints('cpu', pts, `No querido (${getEnvidoSequenceName(seq)})`);
+                if (!state.matchOver) {
+                    updateUI();
+                    if (state.turn === 'cpu') setTimeout(() => cpuTakeTurn(), 800);
+                }
+                return;
+            }
+
+            // Quiero!
+            showBubble('player', '¡Quiero!', 'envido');
+            addLog(`Quisiste el ${getEnvidoSequenceName(seq)}.`, 'player');
+            resolveEnvidoShowdown(seq);
+        }
+
+        function resolveEnvidoShowdown(seq) {
+            // Reconstruir las 3 cartas originales de cada uno para calcular el envido real
+            const fullPlayerCards = [...state.playerHand];
+            const fullCpuCards = [...state.cpuHand];
+            state.playedCards.forEach(slot => {
+                if (slot.player) fullPlayerCards.push(slot.player);
+                if (slot.cpu) fullCpuCards.push(slot.cpu);
+            });
+
+            const pPts = calculateEnvido(fullPlayerCards);
+            const cPts = calculateEnvido(fullCpuCards);
+            const prize = getEnvidoPoints(seq, true);
+
+            let winner = null;
+            let detailMsg = '';
+
+            if (state.mano === 'player') {
+                // Canta primero el Mano (Jugador)
+                if (pPts >= cPts) {
+                    winner = 'player';
+                    detailMsg = `Cantaste "${pPts}" y Don Segundo dijo: "Son buenas".`;
+                } else {
+                    winner = 'cpu';
+                    detailMsg = `Cantaste "${pPts}" y Don Segundo respondió: "${cPts} son mejores".`;
+                }
+            } else {
+                // Canta primero el Mano (CPU)
+                if (cPts >= pPts) {
+                    winner = 'cpu';
+                    detailMsg = `Don Segundo cantó "${cPts}" y dijiste: "Son buenas".`;
+                } else {
+                    winner = 'player';
+                    detailMsg = `Don Segundo cantó "${cPts}" y respondiste: "${pPts} son mejores".`;
+                }
+            }
+
+            addLog(`${detailMsg} (+${prize} pts para ${winner === 'player' ? 'Vos' : 'CPU'})`, 'score');
+            if (winner === 'cpu') {
+                setTimeout(() => showBubble('cpu', `${cPts} ${cPts > pPts ? 'son mejores' : 'de mano'}`, 'envido'), 350);
+            } else {
+                setTimeout(() => showBubble('cpu', 'Son buenas...', 'normal'), 350);
+            }
+
+            awardPoints(winner, prize, getEnvidoSequenceName(seq));
+
+            if (!state.matchOver) {
+                updateUI();
+                if (state.turn === 'cpu') {
+                    setTimeout(() => cpuTakeTurn(), 1100);
+                }
+            }
+        }
+
+        // --- FLOR DEL JUGADOR ---
+        function playerCantarFlor(type = 'flor') {
+            if (state.handOver) return;
+
+            if (state.pendingEnvido) {
+                state.pendingEnvido = null;
+                state.envidoPlayed = true;
+                addLog('¡La Flor anula el Envido!', 'system');
+            }
+            if (state.pendingTruco && state.pendingTruco.by === 'cpu' && state.currentTrick === 0) {
+                state.pendingTruco = null;
+                addLog('¡La Flor está primero!', 'system');
+            }
+
+            if (state.pendingFlor && state.pendingFlor.by === 'cpu') {
+                // El jugador responde subiendo a Contraflor o Contraflor al Resto
+                const newSeq = [...state.pendingFlor.sequence, type];
+                state.pendingFlor = { sequence: newSeq, by: 'player' };
+                const label = type === 'contraflor' ? '¡Contraflor!' : '¡Contraflor al Resto!';
+                showBubble('player', label, 'flor');
+                addLog(`Cantaste: ${label}`, 'player');
+                updateUI();
+                setTimeout(() => cpuRespondToFlor(), 950);
+                return;
+            }
+
+            state.florAnnouncedBy.player = true;
+            state.pendingFlor = { sequence: ['flor'], by: 'player' };
+            showBubble('player', '¡Flor!', 'flor');
+            addLog('¡Cantaste Flor!', 'player');
+            updateUI();
+            setTimeout(() => cpuRespondToFlor(), 950);
+        }
+
+        function playerRespondFlor(accept) {
+            if (!state.pendingFlor || state.pendingFlor.by !== 'cpu') return;
+            const seq = state.pendingFlor.sequence;
+            state.pendingFlor = null;
+            state.florPlayed = true;
+            state.envidoPlayed = true;
+
+            if (!accept) {
+                const pts = getFlorPoints(seq, false);
+                showBubble('player', 'Con flor me achico', 'danger');
+                addLog(`No quisiste la Contraflor. CPU suma ${pts} pts.`, 'player');
+                awardPoints('cpu', pts, 'Flor no querida');
+                if (!state.matchOver) {
+                    updateUI();
+                    if (state.turn === 'cpu') setTimeout(() => cpuTakeTurn(), 800);
+                }
+                return;
+            }
+
+            // Ambos tienen flor y se mide cuál es mayor
+            const fullPlayerCards = [...state.playerHand, ...state.playedCards.map(s => s.player).filter(Boolean)];
+            const fullCpuCards = [...state.cpuHand, ...state.playedCards.map(s => s.cpu).filter(Boolean)];
+            const pFlor = calculateFlor(fullPlayerCards);
+            const cFlor = calculateFlor(fullCpuCards);
+            const prize = getFlorPoints(seq, true);
+
+            const winner = (pFlor > cFlor || (pFlor === cFlor && state.mano === 'player')) ? 'player' : 'cpu';
+            showBubble('player', `¡Quiero! Tengo ${pFlor}`, 'flor');
+            addLog(`Flor medida: Vos ${pFlor} vs CPU ${cFlor}. Gana ${winner === 'player' ? 'Vos' : 'CPU'} (+${prize} pts).`, 'score');
+            awardPoints(winner, prize, 'Contraflor');
+
+            if (!state.matchOver) {
+                updateUI();
+                if (state.turn === 'cpu') setTimeout(() => cpuTakeTurn(), 900);
+            }
+        }
+
+        // --- TRUCO DEL JUGADOR ---
+        function playerCantarTruco() {
+            if (state.handOver) return;
+            const nextLevel = state.trucoLevel + 1;
+            if (nextLevel > 3) return;
+
+            const name = getTrucoName(nextLevel);
+            const phrase = nextLevel === 1 ? '¡Truco!' : nextLevel === 2 ? '¡Quiero Retruco!' : '¡Quiero Vale Cuatro!';
+
+            // Si estaba respondiendo a un truco de la CPU y sube la apuesta, primero acepta implícitamente el nivel anterior
+            if (state.pendingTruco && state.pendingTruco.by === 'cpu') {
+                state.trucoLevel = state.pendingTruco.level;
+            }
+
+            state.pendingTruco = { level: nextLevel, by: 'player' };
+            showBubble('player', phrase, 'truco');
+            addLog(`Cantaste: ${phrase}`, 'player');
+            updateUI();
+
+            setTimeout(() => cpuRespondToTruco(), 950);
+        }
+
+        function playerRespondTruco(accept) {
+            if (!state.pendingTruco || state.pendingTruco.by !== 'cpu') return;
+            const level = state.pendingTruco.level;
+            state.pendingTruco = null;
+
+            if (!accept) {
+                const pts = getTrucoPoints(level, false);
+                showBubble('player', 'No quiero', 'danger');
+                addLog(`No quisiste el ${getTrucoName(level)}. CPU gana la mano (+${pts} pt/s).`, 'player');
+                finishHand('cpu', pts, `${getTrucoName(level)} no querido`);
+                return;
+            }
+
+            state.trucoLevel = level;
+            state.trucoOwner = 'player'; // Al aceptar, el jugador tiene el derecho a subir después
+            showBubble('player', '¡Quiero!', 'truco');
+            addLog(`Quisiste el ${getTrucoName(level)} (en juego ${level + 1} pts).`, 'player');
+            updateUI();
+
+            if (state.turn === 'cpu') {
+                setTimeout(() => cpuTakeTurn(), 800);
+            }
+        }
+
+        function playerIrseAlMazo() {
+            if (state.handOver) return;
+            showBubble('player', 'Me voy al mazo', 'danger');
+
+            // Si se va al mazo en 1ra mano sin haberse jugado envido ni truco, en Argentina vale 2 pts (1 del envido no jugado + 1 del truco)
+            let pts = Math.max(1, state.trucoLevel + 1);
+            if (state.currentTrick === 0 && !state.envidoPlayed && state.trucoLevel === 0 && !state.pendingTruco) {
+                pts = 2;
+                addLog('Te fuiste al mazo en primera sin cantar envido. CPU suma 2 pts.', 'player');
+            } else {
+                addLog(`Te fuiste al mazo. CPU suma ${pts} pt(s).`, 'player');
+            }
+
+            finishHand('cpu', pts, 'Te fuiste al mazo');
+        }
+
+        /**
+         * ============================================================================
+         * INTELIGENCIA ARTIFICIAL (DON SEGUNDO)
+         * Evalúa fuerza de cartas, envido, flor, faroles y estrategia por baza.
+         * ============================================================================
+         */
+        function evaluateCpuHandStrength() {
+            const powers = state.cpuHand.map(c => c.power).sort((a, b) => b - a);
+            const avg = powers.reduce((a, b) => a + b, 0) / (powers.length || 1);
+            const max = powers[0] || 0;
+            const second = powers[1] || 0;
+            return { avg, max, second, powers };
+        }
+
+        function cpuRespondToEnvido() {
+            if (!state.pendingEnvido || state.pendingEnvido.by !== 'player') return;
+            const seq = state.pendingEnvido.sequence;
+
+            // Si la CPU tiene Flor y está habilitada, canta Flor y anula el Envido
+            if (state.withFlor && state.cpuHasFlor && !state.florPlayed) {
+                state.pendingEnvido = null;
+                state.envidoPlayed = true;
+                state.florAnnouncedBy.cpu = true;
+                state.pendingFlor = { sequence: ['flor'], by: 'cpu' };
+                showBubble('cpu', '¡Contra tu envido... FLOR!', 'flor');
+                addLog('Don Segundo cantó ¡Flor! y anuló el envido.', 'cpu');
+                updateUI();
+                return;
+            }
+
+            const fullCpuCards = [...state.cpuHand, ...state.playedCards.map(s => s.cpu).filter(Boolean)];
+            const envidoVal = calculateEnvido(fullCpuCards);
+            const lastCall = seq[seq.length - 1];
+            const isBluffing = Math.random() < 0.14; // 14% de chance de farol criollo
+
+            // Decisión según puntos reales de envido
+            if (envidoVal >= 31 && !seq.includes('falta_envido')) {
+                // Tiene mano muy fuerte (31, 32, 33): sube la apuesta
+                const raiseTo = envidoVal >= 32 && Math.random() < 0.5 ? 'falta_envido' : (lastCall === 'envido' && seq.length === 1 ? 'envido' : 'real_envido');
+                state.pendingEnvido.sequence.push(raiseTo);
+                state.pendingEnvido.by = 'cpu';
+                const label = raiseTo === 'envido' ? '¡Envido!' : raiseTo === 'real_envido' ? '¡Real Envido!' : '¡Falta Envido!';
+                showBubble('cpu', label, 'envido');
+                addLog(`Don Segundo redobla: ${label}`, 'cpu');
+                updateUI();
+                return;
+            }
+
+            let acceptThreshold = 25;
+            if (lastCall === 'real_envido') acceptThreshold = 28;
+            if (lastCall === 'falta_envido') acceptThreshold = 30;
+            if (seq.length >= 2) acceptThreshold += 2;
+
+            if (envidoVal >= acceptThreshold || (isBluffing && lastCall !== 'falta_envido')) {
+                state.pendingEnvido = null;
+                state.envidoPlayed = true;
+                showBubble('cpu', '¡Quiero!', 'envido');
+                addLog(`Don Segundo quiso el ${getEnvidoSequenceName(seq)}.`, 'cpu');
+                resolveEnvidoShowdown(seq);
+            } else {
+                const pts = getEnvidoPoints(seq, false);
+                state.pendingEnvido = null;
+                state.envidoPlayed = true;
+                showBubble('cpu', 'No quiero', 'danger');
+                addLog(`Don Segundo no quiso el ${getEnvidoSequenceName(seq)}. Sumás ${pts} pt(s).`, 'cpu');
+                awardPoints('player', pts, `No querido (${getEnvidoSequenceName(seq)})`);
+                if (!state.matchOver) {
+                    updateUI();
+                    if (state.turn === 'cpu') setTimeout(() => cpuTakeTurn(), 800);
+                }
+            }
+        }
+
+        function cpuRespondToFlor() {
+            if (!state.pendingFlor || state.pendingFlor.by !== 'player') return;
+            const seq = state.pendingFlor.sequence;
+            const fullCpuCards = [...state.cpuHand, ...state.playedCards.map(s => s.cpu).filter(Boolean)];
+            const cFlor = calculateFlor(fullCpuCards);
+
+            if (cFlor === null) {
+                // La CPU no tiene flor, solo acepta el destino (3 puntos para el jugador)
+                state.pendingFlor = null;
+                state.florPlayed = true;
+                state.envidoPlayed = true;
+                const pts = getFlorPoints(seq, true);
+                showBubble('cpu', '¡Linda flor tenés!', 'normal');
+                addLog(`No tenías Flor. Sumás ${pts} pts por tu Flor.`, 'score');
+                awardPoints('player', pts, 'Flor');
+                if (!state.matchOver) {
+                    updateUI();
+                    if (state.turn === 'cpu') setTimeout(() => cpuTakeTurn(), 800);
+                }
+                return;
+            }
+
+            // Ambos tienen flor
+            const last = seq[seq.length - 1];
+            if (last === 'flor' && cFlor >= 32) {
+                state.pendingFlor = { sequence: ['flor', 'contraflor'], by: 'cpu' };
+                showBubble('cpu', '¡Contraflor!', 'flor');
+                addLog('Don Segundo cantó ¡Contraflor!', 'cpu');
+                updateUI();
+                return;
+            }
+
+            if (cFlor >= 27 || last === 'flor') {
+                state.pendingFlor = null;
+                state.florPlayed = true;
+                state.envidoPlayed = true;
+                const fullPlayerCards = [...state.playerHand, ...state.playedCards.map(s => s.player).filter(Boolean)];
+                const pFlor = calculateFlor(fullPlayerCards);
+                const prize = getFlorPoints(seq, true);
+                const winner = (cFlor > pFlor || (cFlor === pFlor && state.mano === 'cpu')) ? 'cpu' : 'player';
+                showBubble('cpu', `¡Quiero! Tengo ${cFlor}`, 'flor');
+                addLog(`Contraflor medida: CPU ${cFlor} vs Vos ${pFlor}. Gana ${winner === 'cpu' ? 'CPU' : 'Vos'} (+${prize} pts).`, 'score');
+                awardPoints(winner, prize, 'Contraflor');
+                if (!state.matchOver) {
+                    updateUI();
+                    if (state.turn === 'cpu') setTimeout(() => cpuTakeTurn(), 900);
+                }
+            } else {
+                const pts = getFlorPoints(seq, false);
+                state.pendingFlor = null;
+                state.florPlayed = true;
+                state.envidoPlayed = true;
+                showBubble('cpu', 'Con flor me achico', 'danger');
+                addLog(`Don Segundo se achicó en la Contraflor. Sumás ${pts} pts.`, 'score');
+                awardPoints('player', pts, 'Contraflor no querida');
+                if (!state.matchOver) {
+                    updateUI();
+                    if (state.turn === 'cpu') setTimeout(() => cpuTakeTurn(), 800);
+                }
+            }
+        }
+
+        function cpuRespondToTruco() {
+            if (!state.pendingTruco || state.pendingTruco.by !== 'player') return;
+            const level = state.pendingTruco.level;
+
+            // Si es la 1ra mano y el envido/flor no se jugó, la CPU puede cantar "El envido está primero" si tiene buen envido
+            if (state.currentTrick === 0 && !state.envidoPlayed && level === 1) {
+                const fullCpuCards = [...state.cpuHand, ...state.playedCards.map(s => s.cpu).filter(Boolean)];
+                if (state.withFlor && state.cpuHasFlor && !state.florPlayed) {
+                    state.pendingTruco = null;
+                    state.florAnnouncedBy.cpu = true;
+                    state.pendingFlor = { sequence: ['flor'], by: 'cpu' };
+                    showBubble('cpu', '¡La Flor está primero!', 'flor');
+                    addLog('Don Segundo cantó ¡Flor! antes del Truco.', 'cpu');
+                    updateUI();
+                    return;
+                }
+                const env = calculateEnvido(fullCpuCards);
+                if (env >= 27) {
+                    state.pendingTruco = null;
+                    const call = env >= 31 ? 'real_envido' : 'envido';
+                    state.pendingEnvido = { sequence: [call], by: 'cpu' };
+                    showBubble('cpu', `¡El ${call === 'envido' ? 'Envido' : 'Real Envido'} está primero!`, 'envido');
+                    addLog(`Don Segundo cantó ${call === 'envido' ? 'Envido' : 'Real Envido'} primero.`, 'cpu');
+                    updateUI();
+                    return;
+                }
+            }
+
+            const { avg, max } = evaluateCpuHandStrength();
+            const wonFirst = state.roundWinners[0] === 'cpu';
+            const lostFirst = state.roundWinners[0] === 'player';
+            const isBluffing = Math.random() < 0.16;
+
+            // Calcular puntuación de confianza (0 a 100)
+            let confidence = avg * 6.5 + (max >= 11 ? 15 : 0);
+            if (wonFirst) confidence += 18;
+            if (lostFirst) confidence -= 15;
+            if (state.currentTrick === 2 && max >= 10) confidence += 20;
+
+            const required = level === 1 ? 48 : level === 2 ? 64 : 78;
+
+            // Si tiene mano extraordinaria y puede subir (Retruco / Vale Cuatro)
+            if (confidence >= required + 22 && level < 3 && Math.random() < 0.65) {
+                state.trucoLevel = level;
+                const raiseLevel = level + 1;
+                state.pendingTruco = { level: raiseLevel, by: 'cpu' };
+                const phrase = raiseLevel === 2 ? '¡Quiero Retruco!' : '¡Quiero Vale Cuatro!';
+                showBubble('cpu', phrase, 'truco');
+                addLog(`Don Segundo retruca: ${phrase}`, 'cpu');
+                updateUI();
+                return;
+            }
+
+            if (confidence >= required || (isBluffing && level === 1)) {
+                state.pendingTruco = null;
+                state.trucoLevel = level;
+                state.trucoOwner = 'cpu';
+                showBubble('cpu', '¡Quiero!', 'truco');
+                addLog(`Don Segundo quiso el ${getTrucoName(level)}.`, 'cpu');
+                updateUI();
+                if (state.turn === 'cpu') {
+                    setTimeout(() => cpuTakeTurn(), 800);
+                }
+            } else {
+                const pts = getTrucoPoints(level, false);
+                state.pendingTruco = null;
+                showBubble('cpu', 'No quiero', 'danger');
+                addLog(`Don Segundo no quiso el ${getTrucoName(level)}. Ganás la mano (+${pts} pt/s).`, 'cpu');
+                finishHand('player', pts, `${getTrucoName(level)} no querido`);
+            }
+        }
+
+        function cpuTakeTurn() {
+            if (state.handOver || state.turn !== 'cpu') return;
+            if (state.pendingTruco || state.pendingEnvido || state.pendingFlor) return;
+
+            // 1. En 1ra mano, evaluar Flor o Envido antes de tirar carta
+            if (state.currentTrick === 0) {
+                if (state.withFlor && state.cpuHasFlor && !state.florPlayed) {
+                    state.florAnnouncedBy.cpu = true;
+                    state.pendingFlor = { sequence: ['flor'], by: 'cpu' };
+                    showBubble('cpu', '¡Flor!', 'flor');
+                    addLog('Don Segundo cantó ¡Flor!', 'cpu');
+                    updateUI();
+                    return;
+                }
+
+                if (!state.envidoPlayed && state.trucoLevel === 0) {
+                    const fullCpuCards = [...state.cpuHand, ...state.playedCards.map(s => s.cpu).filter(Boolean)];
+                    const env = calculateEnvido(fullCpuCards);
+                    const bluffEnvido = Math.random() < 0.15;
+
+                    if (env >= 26 || bluffEnvido) {
+                        let call = 'envido';
+                        if (env >= 32 && Math.random() < 0.45) call = 'real_envido';
+                        state.pendingEnvido = { sequence: [call], by: 'cpu' };
+                        const label = call === 'envido' ? '¡Envido!' : '¡Real Envido!';
+                        showBubble('cpu', label, 'envido');
+                        addLog(`Don Segundo cantó: ${label}`, 'cpu');
+                        updateUI();
+                        return;
+                    }
+                }
+            }
+
+            // 2. Evaluar si cantar Truco / Retruco / Vale Cuatro
+            const canCallTruco = state.trucoLevel < 3 && (state.trucoOwner === null || state.trucoOwner === 'cpu');
+            if (canCallTruco) {
+                const { avg, max } = evaluateCpuHandStrength();
+                const wonFirst = state.roundWinners[0] === 'cpu';
+                let trigger = false;
+
+                if (state.trucoLevel === 0) {
+                    if ((avg >= 8.5 && Math.random() < 0.55) || (wonFirst && max >= 9 && Math.random() < 0.65) || (state.currentTrick === 2 && max >= 10 && Math.random() < 0.7)) {
+                        trigger = true;
+                    } else if (Math.random() < 0.12) {
+                        trigger = true; // Farol de truco
+                    }
+                } else if (state.trucoLevel === 1 && ((avg >= 10.5 && Math.random() < 0.5) || (state.currentTrick === 2 && max >= 12))) {
+                    trigger = true;
+                } else if (state.trucoLevel === 2 && state.currentTrick === 2 && max >= 13) {
+                    trigger = true;
+                }
+
+                if (trigger) {
+                    const nextLevel = state.trucoLevel + 1;
+                    state.pendingTruco = { level: nextLevel, by: 'cpu' };
+                    const phrase = nextLevel === 1 ? '¡Truco!' : nextLevel === 2 ? '¡Quiero Retruco!' : '¡Quiero Vale Cuatro!';
+                    showBubble('cpu', phrase, 'truco');
+                    addLog(`Don Segundo cantó: ${phrase}`, 'cpu');
+                    updateUI();
+                    return;
+                }
+            }
+
+            // 3. Elegir estratégicamente qué carta jugar
+            const chosenIdx = chooseBestCpuCard();
+            const card = state.cpuHand.splice(chosenIdx, 1)[0];
+            state.playedCards[state.currentTrick].cpu = card;
+            sfx.playCardFlip();
+            addLog(`Don Segundo jugó el ${card.value} de ${card.suit}.`, 'cpu');
+
+            afterCardPlayed();
+        }
+
+        function chooseBestCpuCard() {
+            // Ordenar índices de menor a mayor poder
+            const sortedIndices = state.cpuHand
+                .map((c, idx) => ({ idx, power: c.power }))
+                .sort((a, b) => a.power - b.power);
+
+            const playerCardInTrick = state.playedCards[state.currentTrick].player;
+
+            // Si el jugador ya tiró carta en esta baza, intentar ganarle con la carta más chica que lo supere
+            if (playerCardInTrick) {
+                const winningOption = sortedIndices.find(item => item.power > playerCardInTrick.power);
+                if (winningOption) return winningOption.idx;
+
+                // Si no puede ganarle, buscar empatar si conviene (ej. en 1ra mano)
+                if (state.currentTrick === 0) {
+                    const tieOption = sortedIndices.find(item => item.power === playerCardInTrick.power);
+                    if (tieOption) return tieOption.idx;
+                }
+
+                // Si no puede ganar ni empatar, tirar la carta más baja
+                return sortedIndices[0].idx;
+            }
+
+            // Si la CPU juega primero en la baza:
+            if (state.currentTrick === 0) {
+                // En 1ra mano, tirar una carta media-alta para intentar asegurar primera sin gastar el ancho de espadas si tiene dos buenas
+                if (sortedIndices.length === 3 && sortedIndices[1].power >= 8) {
+                    return sortedIndices[1].idx;
+                }
+                return sortedIndices[sortedIndices.length - 1].idx;
+            }
+
+            // En 2da o 3ra mano jugando primero, tirar la más fuerte
+            return sortedIndices[sortedIndices.length - 1].idx;
+        }
+
+        /**
+         * ============================================================================
+         * RESOLUCIÓN DE BAZAS (1ª, 2ª, 3ª) Y FIN DE MANO
+         * ============================================================================
+         */
+        function afterCardPlayed() {
+            const trick = state.playedCards[state.currentTrick];
+            updateUI();
+
+            // Si ambos ya jugaron su carta en la baza actual, resolver quién ganó la baza
+            if (trick.player && trick.cpu) {
+                setTimeout(() => resolveTrick(), 650);
+            } else {
+                // Cambiar el turno al otro jugador
+                state.turn = state.turn === 'player' ? 'cpu' : 'player';
+                updateUI();
+                if (state.turn === 'cpu') {
+                    setTimeout(() => cpuTakeTurn(), 850);
+                }
+            }
+        }
+
+        function resolveTrick() {
+            const t = state.currentTrick;
+            const pCard = state.playedCards[t].player;
+            const cCard = state.playedCards[t].cpu;
+
+            let trickWinner = 'tie';
+            if (pCard.power > cCard.power) trickWinner = 'player';
+            else if (cCard.power > pCard.power) trickWinner = 'cpu';
+
+            state.roundWinners[t] = trickWinner;
+
+            const trickNames = ['Primera', 'Segunda', 'Tercera'];
+            if (trickWinner === 'tie') {
+                addLog(`${trickNames[t]} mano empardada (${pCard.value} de ${pCard.suit} vs ${cCard.value} de ${cCard.suit}).`, 'system');
+            } else {
+                addLog(`${trickNames[t]} mano para ${trickWinner === 'player' ? 'Vos' : 'Don Segundo'}.`, 'system');
+            }
+
+            // Verificar si ya hay un ganador definitivo de la mano según reglas del Truco Argentino
+            const handWinner = checkHandWinner();
+            if (handWinner) {
+                const pts = state.trucoLevel + 1;
+                const trucoLabel = state.trucoLevel > 0 ? getTrucoName(state.trucoLevel) : 'Mano común';
+                finishHand(handWinner, pts, `${trucoLabel} ganada en ${trickNames[t].toLowerCase()}`);
+                return;
+            }
+
+            // Avanzar a la siguiente baza
+            state.currentTrick++;
+            // Quien ganó la baza anterior comienza jugando la siguiente; si fue parda, empieza el Mano
+            state.turn = trickWinner === 'tie' ? state.mano : trickWinner;
+
+            updateUI();
+            if (state.turn === 'cpu') {
+                setTimeout(() => cpuTakeTurn(), 850);
+            }
+        }
+
+        function checkHandWinner() {
+            const [w0, w1, w2] = state.roundWinners;
+
+            // Después de 2 bazas (t === 1)
+            if (state.currentTrick === 1) {
+                // Alguien ganó las 2 primeras
+                if (w0 !== 'tie' && w0 === w1) return w0;
+                // Se empardó la 1ra -> define la 2da
+                if (w0 === 'tie' && w1 !== 'tie') return w1;
+                // Alguien ganó la 1ra y se empardó la 2da -> gana el de la 1ra
+                if (w0 !== 'tie' && w1 === 'tie') return w0;
+            }
+
+            // Después de 3 bazas (t === 2)
+            if (state.currentTrick === 2) {
+                if (w2 !== 'tie') return w2;
+                // Si se emparda la 3ra, gana quien ganó la 1ra
+                if (w0 !== 'tie') return w0;
+                // Si todas fueron pardas, gana el Mano
+                return state.mano;
+            }
+
+            return null;
+        }
+
+        function awardPoints(who, pts, reason) {
+            state.scores[who] += pts;
+            if (state.scores[who] > state.maxPoints) {
+                state.scores[who] = state.maxPoints;
+            }
+            updateScoreboardUI();
+
+            if (state.scores[who] >= state.maxPoints) {
+                state.matchOver = true;
+                state.handOver = true;
+                const isPlayer = who === 'player';
+                if (isPlayer) sfx.playWinHand();
+                else sfx.playLoseHand();
+
+                document.getElementById('summary-title').textContent = isPlayer ? '¡GANASTE EL PARTIDO!' : 'GANÓ DON SEGUNDO';
+                document.getElementById('summary-details').textContent =
+                    `Resultado final: Vos ${state.scores.player} - ${state.scores.cpu} CPU\n` +
+                    `Última jugada: ${reason} (+${pts} pts).\n\n¡Excelente partida de Truco!`;
+                document.getElementById('btn-next-round').textContent = 'Jugar Revancha';
+                document.getElementById('round-summary-overlay').classList.remove('hidden');
+            }
+        }
+
+        function finishHand(winner, pts, reason) {
+            state.handOver = true;
+            updateUI();
+
+            if (winner === 'player') sfx.playWinHand();
+            else sfx.playLoseHand();
+
+            addLog(`>>> ${winner === 'player' ? 'GANASTE' : 'GANÓ CPU'} LA MANO (+${pts} pt/s por ${reason}) <<<`, 'score');
+            awardPoints(winner, pts, reason);
+
+            if (!state.matchOver) {
+                document.getElementById('summary-title').textContent = winner === 'player' ? '¡Ganaste la Mano!' : 'Mano para la CPU';
+                document.getElementById('summary-details').textContent =
+                    `${reason}.\nSumás ${pts} punto(s) para ${winner === 'player' ? 'tu anotador' : 'Don Segundo'}.\n\n` +
+                    `Marcador: Vos ${state.scores.player} - ${state.scores.cpu} CPU`;
+                document.getElementById('btn-next-round').textContent = 'Siguiente Mano';
+                document.getElementById('round-summary-overlay').classList.remove('hidden');
+            }
+        }
+
+        /**
+         * ============================================================================
+         * ACTUALIZACIÓN DE INTERFAZ Y BOTONES CONTEXTUALES
+         * ============================================================================
+         */
+        function updateUI() {
+            updateScoreboardUI();
+
+            // Indicadores de Mano
+            document.getElementById('player-mano-badge').classList.toggle('hidden', state.mano !== 'player');
+            document.getElementById('cpu-mano-badge').classList.toggle('hidden', state.mano !== 'cpu');
+
+            // Puntos de turno
+            const isPlayerTurn = !state.handOver && state.turn === 'player';
+            document.getElementById('player-turn-dot').style.display = isPlayerTurn ? 'inline-block' : 'none';
+            document.getElementById('cpu-turn-dot').style.display = (!state.handOver && state.turn === 'cpu') ? 'inline-block' : 'none';
+
+            // Ayuda de envido/flor del jugador
+            const fullPlayerCards = [...state.playerHand, ...state.playedCards.map(s => s.player).filter(Boolean)];
+            const pEnvido = calculateEnvido(fullPlayerCards);
+            const pFlor = state.withFlor ? calculateFlor(fullPlayerCards) : null;
+            const helperEl = document.getElementById('player-hand-helper');
+            if (pFlor !== null) {
+                helperEl.innerHTML = `Flor: <strong class="text-emerald-300">${pFlor} pts</strong> (Envido: ${pEnvido})`;
+            } else {
+                helperEl.innerHTML = `Envido: <strong class="text-amber-300">${pEnvido} pts</strong>`;
+            }
+
+            // Renderizar cartas de la CPU (boca abajo)
+            const cpuHandEl = document.getElementById('cpu-hand');
+            cpuHandEl.innerHTML = state.cpuHand.map(() => renderCardBackHTML(true)).join('');
+
+            // Renderizar cartas del Jugador
+            const canPlayCard = isPlayerTurn && !state.pendingTruco && !state.pendingEnvido && !state.pendingFlor;
+            const playerHandEl = document.getElementById('player-hand');
+            playerHandEl.innerHTML = state.playerHand
+                .map((card, idx) => renderCardHTML(card, { playable: canPlayCard, index: idx }))
+                .join('');
+
+            // Renderizar las 3 bazas en el centro de la mesa
+            for (let i = 0; i < 3; i++) {
+                const slotEl = document.getElementById(`slot-${i}`);
+                const winEl = document.getElementById(`round-winner-${i}`);
+                const { player, cpu } = state.playedCards[i];
+
+                let slotHTML = '';
+                if (cpu) {
+                    slotHTML += `<div class="absolute -top-2 -left-1 z-10">${renderCardHTML(cpu, { small: true, rotation: -6 })}</div>`;
+                }
+                if (player) {
+                    slotHTML += `<div class="absolute -bottom-2 -right-1 z-20">${renderCardHTML(player, { small: true, rotation: 5 })}</div>`;
+                }
+                slotEl.innerHTML = slotHTML;
+
+                const w = state.roundWinners[i];
+                winEl.textContent = w === 'player' ? '✓ Vos' : w === 'cpu' ? '✗ CPU' : w === 'tie' ? '= Parda' : '';
+            }
+
+            // Badges de estado de la ronda (Truco / Envido / Flor)
+            const badgesEl = document.getElementById('round-status-badges');
+            let badgesHTML = '';
+            if (state.trucoLevel > 0) {
+                badgesHTML += `<span class="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-500 text-stone-950 shadow">
+                    ${getTrucoName(state.trucoLevel).toUpperCase()} (${state.trucoLevel + 1} pts)
+                </span>`;
+            }
+            if (state.envidoPlayed) {
+                badgesHTML += `<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-900/80 text-sky-200 border border-sky-500/40">
+                    Envido resuelto
+                </span>`;
+            }
+            if (state.withFlor && state.florPlayed) {
+                badgesHTML += `<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-900/80 text-emerald-200 border border-emerald-500/40">
+                    Flor resuelta
+                </span>`;
+            }
+            badgesEl.innerHTML = badgesHTML;
+
+            // Instrucción superior de turno
+            const instrEl = document.getElementById('turn-instruction');
+            if (state.handOver) {
+                instrEl.textContent = 'Mano finalizada.';
+            } else if (state.pendingEnvido && state.pendingEnvido.by === 'cpu') {
+                instrEl.textContent = `Don Segundo cantó ${getEnvidoSequenceName(state.pendingEnvido.sequence)}. ¿Querés?`;
+            } else if (state.pendingFlor && state.pendingFlor.by === 'cpu') {
+                instrEl.textContent = `Don Segundo cantó ${state.pendingFlor.sequence.includes('contraflor') ? 'Contraflor' : 'Flor'}. Respondé:`;
+            } else if (state.pendingTruco && state.pendingTruco.by === 'cpu') {
+                instrEl.textContent = `Don Segundo cantó ${getTrucoName(state.pendingTruco.level)}. ¿Querés?`;
+            } else if (state.pendingEnvido || state.pendingTruco || state.pendingFlor) {
+                instrEl.textContent = 'Esperando respuesta de Don Segundo...';
+            } else if (state.turn === 'player') {
+                instrEl.textContent = 'Tu turno: elegí una carta para jugar o hacé un canto.';
+            } else {
+                instrEl.textContent = 'Turno de Don Segundo...';
+            }
+
+            renderActionButtons();
+        }
+
+        function renderActionButtons() {
+            const container = document.getElementById('action-buttons');
+            if (state.handOver) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let buttons = [];
+
+            // 1. RESPUESTA A ENVIDO DE LA CPU
+            if (state.pendingEnvido && state.pendingEnvido.by === 'cpu') {
+                const seq = state.pendingEnvido.sequence;
+                const last = seq[seq.length - 1];
+
+                buttons.push(`<button onclick="playerRespondEnvido(true)" class="btn-envido px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm shadow">¡Quiero!</button>`);
+                buttons.push(`<button onclick="playerRespondEnvido(false)" class="btn-danger px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm shadow">No quiero</button>`);
+
+                if (seq.length === 1 && last === 'envido') {
+                    buttons.push(`<button onclick="playerCantarEnvido('envido')" class="btn-envido px-3 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow">Envido</button>`);
+                }
+                if (!seq.includes('real_envido') && last !== 'falta_envido') {
+                    buttons.push(`<button onclick="playerCantarEnvido('real_envido')" class="btn-envido px-3 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow">Real Envido</button>`);
+                }
+                if (last !== 'falta_envido') {
+                    buttons.push(`<button onclick="playerCantarEnvido('falta_envido')" class="btn-envido px-3 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow">Falta Envido</button>`);
+                }
+                if (state.withFlor && state.playerHasFlor && !state.florPlayed) {
+                    buttons.push(`<button onclick="playerCantarFlor('flor')" class="btn-flor px-3.5 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm shadow">¡Tengo Flor!</button>`);
+                }
+
+                container.innerHTML = buttons.join('');
+                return;
+            }
+
+            // 2. RESPUESTA A FLOR DE LA CPU
+            if (state.pendingFlor && state.pendingFlor.by === 'cpu') {
+                const seq = state.pendingFlor.sequence;
+                const last = seq[seq.length - 1];
+
+                if (state.playerHasFlor) {
+                    if (last === 'flor') {
+                        buttons.push(`<button onclick="playerRespondFlor(true)" class="btn-flor px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm shadow">¡Flor! (Medir)</button>`);
+                        buttons.push(`<button onclick="playerCantarFlor('contraflor')" class="btn-flor px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm shadow">¡Contraflor!</button>`);
+                        buttons.push(`<button onclick="playerCantarFlor('contraflor_resto')" class="btn-flor px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm shadow">Contraflor al Resto</button>`);
+                    } else {
+                        buttons.push(`<button onclick="playerRespondFlor(true)" class="btn-flor px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm shadow">¡Quiero!</button>`);
+                        buttons.push(`<button onclick="playerRespondFlor(false)" class="btn-danger px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm shadow">Con flor me achico</button>`);
+                    }
+                } else {
+                    buttons.push(`<button onclick="playerRespondFlor(true)" class="btn-neutral px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow">¡Buena flor! (Aceptar)</button>`);
+                }
+
+                container.innerHTML = buttons.join('');
+                return;
+            }
+
+            // 3. RESPUESTA A TRUCO DE LA CPU
+            if (state.pendingTruco && state.pendingTruco.by === 'cpu') {
+                const level = state.pendingTruco.level;
+                buttons.push(`<button onclick="playerRespondTruco(true)" class="btn-truco px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm shadow">¡Quiero!</button>`);
+                buttons.push(`<button onclick="playerRespondTruco(false)" class="btn-danger px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm shadow">No quiero</button>`);
+
+                if (level === 1) {
+                    buttons.push(`<button onclick="playerCantarTruco()" class="btn-truco px-3.5 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm shadow">¡Quiero Retruco!</button>`);
+                } else if (level === 2) {
+                    buttons.push(`<button onclick="playerCantarTruco()" class="btn-truco px-3.5 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm shadow">¡Quiero Vale Cuatro!</button>`);
+                }
+
+                // En 1ra mano si no se jugó el envido, el jugador puede cantar "El envido está primero"
+                if (state.currentTrick === 0 && !state.envidoPlayed && level === 1) {
+                    if (state.withFlor && state.playerHasFlor && !state.florPlayed) {
+                        buttons.push(`<button onclick="playerCantarFlor('flor')" class="btn-flor px-3.5 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm shadow">¡Flor primero!</button>`);
+                    } else {
+                        buttons.push(`<button onclick="playerCantarEnvido('envido')" class="btn-envido px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow">Envido primero</button>`);
+                    }
+                }
+
+                container.innerHTML = buttons.join('');
+                return;
+            }
+
+            // 4. TURNO NORMAL DEL JUGADOR (O DESHABILITADO SI ES TURNO DE CPU)
+            const disabledAttr = (state.turn !== 'player' || state.pendingTruco || state.pendingEnvido || state.pendingFlor) ? 'disabled' : '';
+
+            // Botones de Flor / Envido disponibles solo en 1ra mano antes de que se resuelvan
+            if (state.currentTrick === 0 && !state.envidoPlayed && state.trucoLevel === 0) {
+                if (state.withFlor && state.playerHasFlor && !state.florPlayed) {
+                    buttons.push(`<button ${disabledAttr} onclick="playerCantarFlor('flor')" class="btn-flor px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm shadow animate-bounce">¡Cantar Flor!</button>`);
+                } else {
+                    buttons.push(`<button ${disabledAttr} onclick="playerCantarEnvido('envido')" class="btn-envido px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow">Envido</button>`);
+                    buttons.push(`<button ${disabledAttr} onclick="playerCantarEnvido('real_envido')" class="btn-envido px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow">Real Envido</button>`);
+                    buttons.push(`<button ${disabledAttr} onclick="playerCantarEnvido('falta_envido')" class="btn-envido px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow">Falta Envido</button>`);
+                }
+            }
+
+            // Botón de Truco / Retruco / Vale Cuatro
+            const canRaiseTruco = state.trucoLevel < 3 && (state.trucoOwner === null || state.trucoOwner === 'player');
+            if (canRaiseTruco) {
+                const label = state.trucoLevel === 0 ? '¡Truco!' : state.trucoLevel === 1 ? '¡Retruco!' : '¡Vale Cuatro!';
+                buttons.push(`<button ${disabledAttr} onclick="playerCantarTruco()" class="btn-truco px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm shadow">${label}</button>`);
+            }
+
+            // Irse al mazo
+            buttons.push(`<button ${disabledAttr} onclick="playerIrseAlMazo()" class="btn-neutral px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow">Irse al mazo</button>`);
+
+            container.innerHTML = buttons.join('');
+        }
+
+        /**
+         * ============================================================================
+         * CONTROLES DE CONFIGURACIÓN, MODALES Y REINICIO
+         * ============================================================================
+         */
+        function toggleFlorSetting() {
+            state.withFlor = !state.withFlor;
+            const ind = document.getElementById('flor-indicator');
+            const txt = document.getElementById('flor-status-text');
+            if (state.withFlor) {
+                ind.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]';
+                txt.textContent = 'SÍ';
+                txt.className = 'text-emerald-300';
+            } else {
+                ind.className = 'w-2.5 h-2.5 rounded-full bg-stone-500';
+                txt.textContent = 'NO';
+                txt.className = '';
+            }
+            updateModeLabel();
+            addLog(`Modo Flor ${state.withFlor ? 'ACTIVADO' : 'DESACTIVADO'} (aplica desde la próxima mano).`, 'system');
+        }
+
+        function toggleMaxPoints() {
+            state.maxPoints = state.maxPoints === 30 ? 15 : 30;
+            document.getElementById('max-points-text').textContent = state.maxPoints;
+            updateModeLabel();
+            updateScoreboardUI();
+            addLog(`Límite de partida cambiado a ${state.maxPoints} puntos.`, 'system');
+        }
+
+        function updateModeLabel() {
+            document.getElementById('game-mode-label').textContent =
+                `A ${state.maxPoints} puntos • ${state.withFlor ? 'Con Flor' : 'Sin Flor'}`;
+        }
+
+        function toggleSound() {
+            sfx.enabled = !sfx.enabled;
+            document.getElementById('icon-sound-on').classList.toggle('hidden', !sfx.enabled);
+            document.getElementById('icon-sound-off').classList.toggle('hidden', sfx.enabled);
+            if (sfx.enabled) sfx.playCanto();
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function confirmRestart() {
+            openModal('modal-confirm');
+        }
+
+        function resetFullGame() {
+            closeModal('modal-confirm');
+            state.scores = { player: 0, cpu: 0 };
+            state.mano = 'player';
+            state.matchOver = false;
+            state.playerHand = [];
+            document.getElementById('game-log').innerHTML = '';
+            addLog('¡Partida reiniciada! Repartiendo cartas...', 'system');
+            startNewHand();
+        }
+
+        // Arrancar la primera mano al cargar la página
+        window.onload = function () {
+            startNewHand();
+        };
+    </script>
+</body>
+</html>
